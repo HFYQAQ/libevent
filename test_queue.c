@@ -23,7 +23,7 @@ int main()
 	TAILQ_INSERT_AFTER(&headlist, &event2, &event1, ev_next);
 	TAILQ_INSERT_TAIL(&headlist, &event3, ev_next);
 	TAILQ_INSERT_TAIL(&headlist, &event4, ev_next);
-	
+
 	struct event *event;
 	TAILQ_FOREACH_REVERSE(&headlist, event, ev_next, head)
 		printf("%d\n", event->n);
