@@ -1,6 +1,7 @@
 #ifndef _MIN_HEAP_H_
 #define _MIN_HEAP_H_
 
+#include <stdlib.h>
 #include "event.h"
 #include "evutil.h"
 

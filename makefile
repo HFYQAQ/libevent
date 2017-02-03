@@ -1,8 +1,8 @@
-test_queue : test_queue.o
-	gcc -o test_queue test_queue.o
+test: test.o event.o log.o
+	gcc -o test test.o event.o log.o
 
-test_queue.o : test_queue.c queue.h
-	gcc -c test_queue.c
+test.o: test.c event.c event.h event-internal.h queue.h min_heap.h log.c log.h
+	gcc -c test.c event.c log.c
 
 clean:
-	rm test_queue.o
+	rm *.o

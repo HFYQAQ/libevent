@@ -5,7 +5,11 @@
 #include "style.h"
 #include "queue.h"
 
-#define EVENT_LOG_HEAD FONT_HIGHTLIGHT"%s:%s:%d: "FONT_NONE // <文件名>:<函数名>:<行号>
+#define EVENT_LOG_HEAD FONT_HIGHTLIGHT"%s:%s:%d: "FONT_NONE // "<文件名>:<函数名>:<行号>: "
+void event_warnning(const char *);
+void event_warnningx(const char *);
+void event_error(int, const char *);
+void event_errorx(int, const char *);
 
 struct event {
 	// 存储结构中的位置变量
