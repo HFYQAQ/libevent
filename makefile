@@ -1,8 +1,20 @@
-test: test.o event.o log.o
-	gcc -o test test.o event.o log.o
+test: test.o event.o log.o evutil.o evsignal.o
+	gcc -o test test.o event.o log.o evutil.o evsignal.o
 
-test.o: test.c event.c event.h event-internal.h queue.h min_heap.h log.c log.h
-	gcc -c test.c event.c log.c
+test.o: test.c
+	gcc -c test.c
+
+event.o: event-internal.h event.h event.c
+	gcc -c event.c
+
+log.o: log.h log.c
+	gcc -c log.c
+
+evutil.o: evutil.h evutil.c
+	gcc -c evutil.c
+
+evsignal.o: evsignal.h evsignal.c
+	gcc -c evsignal.c
 
 clean:
 	rm *.o

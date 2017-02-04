@@ -6,6 +6,8 @@
 #include "event-internal.h"
 #include "event.h"
 #include "log.h"
+#include "evutil.h"
+#include "evsignal.h"
 
 static int use_monotonic;
 
@@ -28,6 +30,7 @@ struct event_base *event_base_new() {
 	min_heap_ctor(&base->timeheap);
 
 	// Signal init
+	evsignal_init(base);
 
 	// I/O init
 
@@ -67,7 +70,7 @@ int gettime(struct event_base *base) {
 #endif
 
 	// 使用其它获取时间方式
-	return gettimeofday(event_tv, NULL);
+	return evutil_gettimeofday(event_tv, NULL);
 }
 
 void event_warnning(const char *format) {

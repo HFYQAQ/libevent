@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include "queue.h"
 #include "min_heap.h"
+#include "evsignal.h"
 
 TAILQ_HEAD(event_list, event);
 
@@ -15,6 +16,9 @@ struct event_base {
 	// 数据容器
 	struct event_list eventqueue;
 	min_heap_t timeheap;
+
+	// about signal
+	struct evsignal_info sig;
 };
 
 #endif

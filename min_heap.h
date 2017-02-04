@@ -10,19 +10,19 @@ typedef struct min_heap {
 	unsigned n, a;
 } min_heap_t;
 
-inline void min_heap_ctor(min_heap_t *);
-inline void min_heap_dtor(min_heap_t *);
-inline unsigned min_heap_size(min_heap_t *);
-inline int min_heap_empty(min_heap_t *);
-inline void min_heap_element_init(struct event *);
-inline int min_heap_greater(struct event *, struct event *);
-inline struct event* min_heap_top(min_heap_t *);
-inline int min_heap_reserve(min_heap_t *, unsigned);
-inline int min_heap_push(min_heap_t *, struct event *);
-inline struct event* min_heap_pop(min_heap_t *);
-inline int min_heap_erase(min_heap_t *, struct event *);
-inline void min_heap_shift_up(min_heap_t *, unsigned, struct event *);
-inline void min_heap_shift_down(min_heap_t *, unsigned, struct event *);
+static inline void min_heap_ctor(min_heap_t *);
+static inline void min_heap_dtor(min_heap_t *);
+static inline unsigned min_heap_size(min_heap_t *);
+static inline int min_heap_empty(min_heap_t *);
+static inline void min_heap_element_init(struct event *);
+static inline int min_heap_greater(struct event *, struct event *);
+static inline struct event* min_heap_top(min_heap_t *);
+static inline int min_heap_reserve(min_heap_t *, unsigned);
+static inline int min_heap_push(min_heap_t *, struct event *);
+static inline struct event* min_heap_pop(min_heap_t *);
+static inline int min_heap_erase(min_heap_t *, struct event *);
+static inline void min_heap_shift_up(min_heap_t *, unsigned, struct event *);
+static inline void min_heap_shift_down(min_heap_t *, unsigned, struct event *);
 
 void min_heap_ctor(min_heap_t *s) {
 	s->p = 0;
