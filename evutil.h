@@ -22,4 +22,10 @@ do {	\
 		event_err(1, EVENT_LOG_HEAD "fcntl: ", __FILE__, __FUNCTION__, __LINE__);	\
 } while(0)
 
+#define EVUTIL_FD_NONBLOCK(fd)	\
+do {	\
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)	\
+		event_err(1, EVENT_LOG_HEAD "fcntl: ", __FILE__, __FUNCTION__, __LINE__);	\
+} while(0)
+
 #endif
