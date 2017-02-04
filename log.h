@@ -1,8 +1,12 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
+#include "style.h"
+
 #define EVENT_LOG_WARN 0
 #define EVENT_LOG_ERR 1
+
+#define EVENT_LOG_HEAD FONT_HIGHTLIGHT"%s:%s:%d: "FONT_NONE // "<文件名>:<函数名>:<行号>: "
 
 #define EV_CHECK_FMT(m, n) __attribute__((format(printf, m, n)))
 

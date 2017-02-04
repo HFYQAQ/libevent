@@ -19,7 +19,7 @@ struct event_base *event_base_new() {
 	
 	// 为base分配空间	
 	if (!(base = (struct event_base *) calloc(1, sizeof(struct event_base))))
-		event_error(1, "calloc: ");
+		event_err(1, EVENT_LOG_HEAD "calloc: ", __FILE__, __FUNCTION__, __LINE__);
 
 	// 初始化时间量
 	detect_monotonic();
@@ -71,24 +71,4 @@ int gettime(struct event_base *base) {
 
 	// 使用其它获取时间方式
 	return evutil_gettimeofday(event_tv, NULL);
-}
-
-void event_warnning(const char *format) {
-	char buff[1024] = EVENT_LOG_HEAD;
-	event_warn(strcat(buff, format), __FILE__, __FUNCTION__, __LINE__);
-}
-
-void event_warnningx(const char *format) {
-	char buff[1024] = EVENT_LOG_HEAD;
-	event_warnx(strcat(buff, format), __FILE__, __FUNCTION__, __LINE__);
-}
-
-void event_error(int eval, const char *format) {
-	char buff[1024] = EVENT_LOG_HEAD;
-	event_err(eval, strcat(buff, format), __FILE__, __FUNCTION__, __LINE__);
-}
-
-void event_errorx(int eval, const char *format) {
-	char buff[1024] = EVENT_LOG_HEAD;
-	event_errx(eval, strcat(buff, format), __FILE__, __FUNCTION__, __LINE__);
 }
