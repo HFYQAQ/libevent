@@ -50,6 +50,14 @@ void event_errx(int eval, const char *format, ...) {
 	exit(eval);
 }
 
+void event_log(const char *format, ...) {
+	va_list list;
+
+	va_start(list, format);
+	_log_helper(EVENT_LOG_LOG, -1, format, list);
+	va_end(list);
+}
+
 void _log_helper(int severity, int log_errno, const char *format, va_list list) {
 	char buff[1024];
 	size_t len;
@@ -79,13 +87,16 @@ void _log_tag(int severity, const char *buff) {
 
 		switch(severity) {
 		case EVENT_LOG_WARN:
-			severity_str = FONT_HIGHTLIGHT FONT_COLOR_PURPLE"[warnning]"FONT_NONE;
+			severity_str = FONT_HIGHTLIGHT FONT_COLOR_PURPLE "[WARNNING]" FONT_NONE;
 			break;
 		case EVENT_LOG_ERR:
-			severity_str = FONT_HIGHTLIGHT FONT_COLOR_RED"[error]"FONT_NONE;
+			severity_str = FONT_HIGHTLIGHT FONT_COLOR_RED "[ERROR]" FONT_NONE;
+			break;
+		case EVENT_LOG_LOG:
+			severity_str = FONT_HIGHTLIGHT FONT_COLOR_GREEN "[LOG]" FONT_NONE;
 			break;
 		default:
-			severity_str = FONT_HIGHTLIGHT FONT_COLOR_YELLOW"[unkown]"FONT_NONE;
+			severity_str = FONT_HIGHTLIGHT FONT_COLOR_YELLOW "[unkown]" FONT_NONE;
 			break;
 		}
 		fprintf(stderr, "%s %s\n", severity_str, buff);

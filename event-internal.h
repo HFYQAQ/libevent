@@ -6,6 +6,10 @@
 #include "min_heap.h"
 #include "evsignal.h"
 
+struct eventop {
+	void *(*init)(void);
+};
+
 TAILQ_HEAD(event_list, event);
 
 struct event_base {
@@ -17,8 +21,12 @@ struct event_base {
 	struct event_list eventqueue;
 	min_heap_t timeheap;
 
-	// about signal
+	// about Signal
 	struct evsignal_info sig;
+
+	// about I/O multiplexing
+	struct eventop *evsel;
+	void *evbase;
 };
 
 #endif

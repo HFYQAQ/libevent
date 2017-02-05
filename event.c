@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include "config.h"
 #include "event-internal.h"
 #include "event.h"
 #include "log.h"
@@ -10,6 +11,17 @@
 #include "evsignal.h"
 
 static int use_monotonic;
+
+#ifdef HAVE_SELECT
+extern struct eventop selectops;
+#endif
+
+static struct eventop *eventops[] = {
+#ifdef HAVE_SELECT
+&selectops,
+#endif
+NULL
+};
 
 static void detect_monotonic();
 static int gettime(struct event_base *);
@@ -29,10 +41,15 @@ struct event_base *event_base_new() {
 	TAILQ_INIT(&base->eventqueue);
 	min_heap_ctor(&base->timeheap);
 
-	// Signal init
-	evsignal_init(base);
+	// about I/O multiplexing
+	for (int i = 0; eventops[i] && !base->evbase; i++) {
+		base->evsel = eventops[i];
 
-	// I/O init
+		base->evbase = base->evsel->init();
+	}
+
+	// about Signal(depend on I/O)
+	base->sig.socketpair[0] = base->sig.socketpair[1] = -1;
 
 	return 0;
 }

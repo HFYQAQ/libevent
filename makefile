@@ -1,5 +1,5 @@
-test: test.o event.o log.o evutil.o evsignal.o
-	gcc -o test test.o event.o log.o evutil.o evsignal.o
+test: test.o event.o log.o evutil.o evsignal.o select.o
+	gcc -o test test.o event.o log.o evutil.o evsignal.o select.o
 
 test.o: test.c
 	gcc -c test.c
@@ -15,6 +15,9 @@ evutil.o: evutil.h evutil.c
 
 evsignal.o: evsignal.h evsignal.c
 	gcc -c evsignal.c
+
+select.o: select.c
+	gcc -c select.c
 
 clean:
 	rm *.o
