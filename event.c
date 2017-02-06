@@ -47,6 +47,10 @@ struct event_base *event_base_new() {
 
 		base->evbase = base->evsel->init();
 	}
+	if (!base->evbase)
+		event_errx(1, EVENT_LOG_HEAD "no multiplexing available.", __FILE__, __func__, __LINE__);
+	else
+		event_log("current multiplexing: %s", base->evsel->name);
 
 	// about Signal(depend on I/O)
 	base->sig.socketpair[0] = base->sig.socketpair[1] = -1;

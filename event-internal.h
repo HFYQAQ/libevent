@@ -7,6 +7,7 @@
 #include "evsignal.h"
 
 struct eventop {
+	const char *name;
 	void *(*init)(void);
 };
 
