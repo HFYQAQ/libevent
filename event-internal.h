@@ -5,10 +5,12 @@
 #include "queue.h"
 #include "min_heap.h"
 #include "evsignal.h"
+#include "event.h"
 
 struct eventop {
 	const char *name;
 	void *(*init)(void);
+	int (*add)(void *, struct event *);
 };
 
 TAILQ_HEAD(event_list, event);

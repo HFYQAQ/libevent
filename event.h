@@ -11,11 +11,15 @@
 #define EV_TIMEOUT 0x8
 
 struct event {
+	int ev_fd;
+
 	// 存储结构中的位置变量
 	TAILQ_ENTRY(event) ev_next;
 	unsigned min_heap_idx;
 
 	struct timeval ev_timeout;
+
+	short ev_type;
 };
 
 struct event_base *event_base_new();

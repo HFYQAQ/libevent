@@ -6,6 +6,7 @@
 #include "log.h"
 
 #define SELECT_INIT_NEVENTS 8 // event数组初始容量
+#define SELECT_MAX_NEVENTS FD_SETSIZE // event数组最大容量
 
 struct selectop {
 	int fds;
@@ -20,12 +21,14 @@ struct selectop {
 };
 
 static void *select_init();
+static int select_add(void *, struct event *);
 
-static void select_resize(struct selectop *, int);
+static int select_resize(struct selectop *, int);
 
 struct eventop selectops = {
 	"select",
-	select_init
+	select_init,
+	select_add
 };
 
 void *select_init() {
@@ -34,7 +37,7 @@ void *select_init() {
 	if (!(sop = (struct selectop *) calloc(1, sizeof(struct selectop))))
 		goto error;
 
-	sop->fds = 0;
+	sop->fds = -1;
 	sop->nevents = 0;
 	sop->events_read = NULL;
 	sop->events_write = NULL;
@@ -47,7 +50,8 @@ void *select_init() {
 		goto error;
 	if (!(sop->writeset_dup = (fd_set *) calloc(1, sizeof(fd_set))))
 		goto error;
-	select_resize(sop, SELECT_INIT_NEVENTS);
+	if (select_resize(sop, SELECT_INIT_NEVENTS) < 0)
+		return NULL;
 
 	return sop;
 
@@ -56,20 +60,53 @@ error:
 	return NULL;
 }
 
-void select_resize(struct selectop *sop, int nevents) {
+int select_add(void *arg, struct event *ev) {
+	struct selectop *sop = arg;
+
+	if (!ev) {
+		event_warnx(EVENT_LOG_HEAD "the arg 2 cannot be NULL", __FILE__, __func__, __LINE__);
+		return -1;
+	}
+	if (sop->fds < ev->ev_fd) {
+		// 扩容
+		if (sop->nevents < ev->ev_fd + 1) {
+			int nevents = (2 * sop->nevents) >= SELECT_MAX_NEVENTS ? SELECT_MAX_NEVENTS : (2 * sop->nevents);
+			if (select_resize(sop, nevents) < 0)
+				return -1;
+		}
+	}
+	if (ev->ev_type & EV_READ) {
+		FD_SET(ev->ev_fd, sop->readset);
+		sop->events_read[ev->ev_fd] = ev;
+	}
+	if (ev->ev_type & EV_WRITE) {
+		FD_SET(ev->ev_fd, sop->writeset);
+		sop->events_write[ev->ev_fd] = ev;
+	}
+
+	return 0;
+}
+
+int select_resize(struct selectop *sop, int nevents) {
 	int nevents_old = sop->nevents;
 	struct event **events_read;
 	struct event **events_write;
 
 	if (!(events_read = realloc(sop->events_read, nevents * sizeof(struct event *))))
-		event_err(1, EVENT_LOG_HEAD "realloc: ", __FILE__, __func__, __LINE__);
+		goto error;
 	sop->events_read = events_read;
 	if (!(events_write = realloc(sop->events_write, nevents * sizeof(struct event *))))
-		event_err(1, EVENT_LOG_HEAD "realloc: ", __FILE__, __func__, __LINE__);
+		goto error;
 	sop->events_write = events_write;
 
 	memset(sop->events_read + nevents_old, 0, nevents - nevents_old);
 	memset(sop->events_write + nevents_old, 0, nevents - nevents_old);
 
 	sop->nevents = nevents;
+
+	return 0;
+
+error:
+	event_warn(EVENT_LOG_HEAD "realloc: ", __FILE__, __func__, __LINE__);
+	return -1;
 }
