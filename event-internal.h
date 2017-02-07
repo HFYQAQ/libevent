@@ -23,6 +23,11 @@ struct event_base {
 	// 数据容器
 	struct event_list eventqueue;
 	min_heap_t timeheap;
+	struct event_list **activequeues;
+	int nactivequeues;
+
+	int event_count;
+	int event_active_count;
 
 	// about Signal
 	struct evsignal_info sig;
