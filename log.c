@@ -51,6 +51,9 @@ void event_errx(int eval, const char *format, ...) {
 }
 
 void event_log(const char *format, ...) {
+	if (!LOGABLE)
+		return;
+
 	va_list list;
 
 	va_start(list, format);

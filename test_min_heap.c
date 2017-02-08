@@ -34,7 +34,7 @@ int main() {
 	printf("%ld\n", min_heap_pop(&s)->ev_timeout.tv_sec);
 	printf("%ld\n", min_heap_pop(&s)->ev_timeout.tv_sec);
 	printf("%ld\n", min_heap_pop(&s)->ev_timeout.tv_sec);
-	
+
 	min_heap_ctor(&s);
 
 	return 0;

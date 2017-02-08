@@ -95,10 +95,11 @@ int min_heap_erase(min_heap_t *s, struct event *e) {
 		return -1;
 
 	unsigned parent = (e->min_heap_idx - 1) / 2;
-	if (e->min_heap_idx > 0 && min_heap_greater(s->p[parent], s->p[--s->n]))
-		min_heap_shift_up(s, e->min_heap_idx, s->p[s->n]);
+	struct event *last = s->p[--s->n];
+	if (e->min_heap_idx > 0 && min_heap_greater(s->p[parent], last))
+		min_heap_shift_up(s, e->min_heap_idx, last);
 	else
-		min_heap_shift_down(s, e->min_heap_idx, s->p[s->n]);
+		min_heap_shift_down(s, e->min_heap_idx, last);
 	e->min_heap_idx = -1;
 
 	return 0;
@@ -106,6 +107,7 @@ int min_heap_erase(min_heap_t *s, struct event *e) {
 
 void min_heap_shift_up(min_heap_t *s, unsigned hole_idx, struct event *e) {
 	unsigned parent = (hole_idx - 1) / 2;
+
 	while (hole_idx && min_heap_greater(s->p[parent], e)) {
 		(s->p[hole_idx] = s->p[parent])->min_heap_idx = hole_idx;
 		hole_idx = parent;
@@ -116,6 +118,7 @@ void min_heap_shift_up(min_heap_t *s, unsigned hole_idx, struct event *e) {
 
 void min_heap_shift_down(min_heap_t *s, unsigned hole_idx, struct event *e) {
 	unsigned min_child = (hole_idx + 1) * 2;
+
 	while (min_child <= s->n) {
 		min_child -= (min_child == s->n || min_heap_greater(s->p[min_child], s->p[min_child - 1]));
 		if (min_heap_greater(e, s->p[min_child])) {

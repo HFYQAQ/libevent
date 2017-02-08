@@ -28,6 +28,7 @@ struct event {
 
 	short ev_status;
 	int ev_pri;
+	short ev_res; // 用于记录被激活的原因
 
 	// 存储结构中的位置变量
 	TAILQ_ENTRY(event) ev_next;
@@ -38,6 +39,7 @@ struct event {
 };
 
 struct event_base *event_base_new();
+int event_base_set(struct event_base *, struct event *);
 void event_set(struct event *, int, short, void *, void (*)(int, short, void *));
 int event_add(struct event *, struct timeval *);
 #endif

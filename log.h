@@ -3,6 +3,8 @@
 
 #include "style.h"
 
+#define LOGABLE 1
+
 #define EVENT_LOG_WARN 0
 #define EVENT_LOG_ERR 1
 #define EVENT_LOG_LOG 2
