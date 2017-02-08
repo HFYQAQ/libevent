@@ -10,7 +10,7 @@
 
 struct selectop {
 	int fds;
-	int nevents;
+	int nevents; // event数组容量
 
 	fd_set *readset;
 	fd_set *writeset;
@@ -74,6 +74,7 @@ int select_add(void *arg, struct event *ev) {
 			if (select_resize(sop, nevents) < 0)
 				return -1;
 		}
+		sop->fds = ev->ev_fd;
 	}
 	if (ev->ev_type & EV_READ) {
 		FD_SET(ev->ev_fd, sop->readset);

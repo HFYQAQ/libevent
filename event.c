@@ -28,6 +28,7 @@ NULL
 
 static void detect_monotonic();
 static int gettime(struct event_base *, struct timeval *);
+static void time_correct(struct event_base *, struct timeval *);
 static void event_queue_insert(struct event_base *, struct event *, short);
 static void event_queue_remove(struct event_base *, struct event *, short);
 
@@ -127,6 +128,20 @@ int event_add(struct event *ev, struct timeval *tv) {
 	return 0;
 }
 
+int event_base_loop(struct event_base *base) {
+	int loop = 1;
+	struct timeval tv;
+
+	time_correct(base, &tv);
+
+	while(loop) {
+
+	}
+
+	event_log("loop has been asked to terminnate.");
+	return 0;
+}
+
 void detect_monotonic() {
 #if defined HAVE_CLOCK_GETTIME && defined CLOCK_MONOTONIC
 	struct timespec ts;
@@ -159,6 +174,31 @@ int gettime(struct event_base *base, struct timeval *tv) {
 
 	// 使用其它获取时间方式
 	return evutil_gettimeofday(tv, NULL);
+}
+
+void time_correct(struct event_base *base, struct timeval *tv) {
+	if (use_monotonic)
+		return;
+
+	struct timeval off;
+
+	gettime(base, tv);
+printf("now: %d\n", tv->tv_sec);
+printf("tv: %d\n", base->event_tv.tv_sec);
+	if (evutil_timercmp(tv, &base->event_tv, >=)) {
+		event_log("time is running normally");
+		base->event_tv = *tv;
+		return;
+	}
+
+	EVUTIL_TIMERSUB(&base->event_tv, tv, &off);
+
+	struct event **p = base->timeheap.p;
+	unsigned n = base->timeheap.n;
+	for (; n > 0; n--)
+		EVUTIL_TIMERSUB(&p[n - 1]->ev_timeout, &off, &p[n - 1]->ev_timeout);
+	base->event_tv = *tv;
+	event_log("time is running backwards, but now corrected");
 }
 
 void event_queue_insert(struct event_base *base, struct event *ev, short status) {

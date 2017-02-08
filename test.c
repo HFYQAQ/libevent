@@ -13,7 +13,8 @@ int main() {
 	struct timeval tv;
 	tv.tv_sec = 3;
 	event_add(&ev1, &tv);
-	event_add(&ev1, &tv);
+
+	event_base_loop(base);
 
 	return 0;
 }

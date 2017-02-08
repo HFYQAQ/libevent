@@ -20,6 +20,16 @@ do {	\
 	}	\
 } while(0)
 
+#define EVUTIL_TIMERSUB(tva, tvb, tv)	\
+do {	\
+	(tv)->tv_sec = (tva)->tv_sec - (tvb)->tv_sec;	\
+	(tv)->tv_usec = (tva)->tv_usec - (tvb)->tv_usec;	\
+	if ((tv)->tv_usec < 0) {	\
+		(tv)->tv_sec--;	\
+		(tv)->tv_usec += 1000000;	\
+	}	\
+} while(0)
+
 #ifdef HAVE_GETTIMEOFDAY
 #define evutil_gettimeofday(tv, tz) gettimeofday((tv), (tz))
 #else
