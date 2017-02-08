@@ -120,7 +120,7 @@ int event_add(struct event *ev, struct timeval *tv) {
 
 		struct timeval now;
 		gettime(ev->ev_base, &now);
-		EVUTIL_TIMERADD(&now, tv, &ev->ev_base->event_tv);
+		EVUTIL_TIMERADD(&now, tv, &ev->ev_timeout);
 
 		event_queue_insert(ev->ev_base, ev, EVLIST_TIMEOUT);
 	}
@@ -183,10 +183,8 @@ void time_correct(struct event_base *base, struct timeval *tv) {
 	struct timeval off;
 
 	gettime(base, tv);
-printf("now: %d\n", tv->tv_sec);
-printf("tv: %d\n", base->event_tv.tv_sec);
 	if (evutil_timercmp(tv, &base->event_tv, >=)) {
-		event_log("time is running normally");
+		event_log("time is running normally, need not corrected");
 		base->event_tv = *tv;
 		return;
 	}
