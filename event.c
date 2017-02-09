@@ -29,6 +29,7 @@ NULL
 static void detect_monotonic();
 static int gettime(struct event_base *, struct timeval *);
 static void time_correct(struct event_base *, struct timeval *);
+static int event_haveevents(struct event_base *);
 static void event_queue_insert(struct event_base *, struct event *, short);
 static void event_queue_remove(struct event_base *, struct event *, short);
 
@@ -132,10 +133,18 @@ int event_base_loop(struct event_base *base) {
 	int loop = 1;
 	struct timeval tv;
 
-	time_correct(base, &tv);
-
 	while(loop) {
+		time_correct(base, &tv);
 
+		if (!event_haveevents(base)) {
+			event_log("current base have no events");
+
+			return 1;
+		}
+
+		gettime(base, &base->event_tv);
+
+		gettime(base, &base->tv_cache);
 	}
 
 	event_log("loop has been asked to terminnate.");
@@ -197,6 +206,10 @@ void time_correct(struct event_base *base, struct timeval *tv) {
 		EVUTIL_TIMERSUB(&p[n - 1]->ev_timeout, &off, &p[n - 1]->ev_timeout);
 	base->event_tv = *tv;
 	event_log("time is running backwards, but now corrected");
+}
+
+int event_haveevents(struct event_base *base) {
+	return base->event_count > 0;
 }
 
 void event_queue_insert(struct event_base *base, struct event *ev, short status) {
