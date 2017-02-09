@@ -11,6 +11,7 @@ struct eventop {
 	const char *name;
 	void *(*init)(void);
 	int (*add)(void *, struct event *);
+	int (*process)(struct event_base *, void *, struct timeval *);
 };
 
 TAILQ_HEAD(event_list, event);

@@ -30,6 +30,8 @@ do {	\
 	}	\
 } while(0)
 
+#define EVUTIL_TIMERCLEAR(tv) (tv)->tv_sec = (tv)->tv_usec = 0
+
 #ifdef HAVE_GETTIMEOFDAY
 #define evutil_gettimeofday(tv, tz) gettimeofday((tv), (tz))
 #else

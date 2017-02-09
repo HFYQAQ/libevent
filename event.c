@@ -132,6 +132,7 @@ int event_add(struct event *ev, struct timeval *tv) {
 int event_base_loop(struct event_base *base) {
 	int loop = 1;
 	struct timeval tv;
+	struct timeval *tv_p = &tv;
 
 	while(loop) {
 		time_correct(base, &tv);
@@ -143,12 +144,19 @@ int event_base_loop(struct event_base *base) {
 		}
 
 		gettime(base, &base->event_tv);
+		EVUTIL_TIMERCLEAR(&base->tv_cache);
+
+		base->evsel->process(base, base->evbase, tv_p);
 
 		gettime(base, &base->tv_cache);
 	}
 
 	event_log("loop has been asked to terminnate.");
 	return 0;
+}
+
+void event_active(struct event *ev) {
+	event_log("ev active success");
 }
 
 void detect_monotonic() {

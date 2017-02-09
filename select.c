@@ -1,6 +1,7 @@
 #include <sys/select.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "event-internal.h"
 #include "event.h"
 #include "log.h"
@@ -22,13 +23,15 @@ struct selectop {
 
 static void *select_init();
 static int select_add(void *, struct event *);
+static int select_process(struct event_base *, void *, struct timeval *);
 
 static int select_resize(struct selectop *, int);
 
 struct eventop selectops = {
 	"select",
 	select_init,
-	select_add
+	select_add,
+	select_process
 };
 
 void *select_init() {
@@ -83,6 +86,48 @@ int select_add(void *arg, struct event *ev) {
 	if (ev->ev_type & EV_WRITE) {
 		FD_SET(ev->ev_fd, sop->writeset);
 		sop->events_write[ev->ev_fd] = ev;
+	}
+
+	return 0;
+}
+
+int select_process(struct event_base *base, void *arg, struct timeval *tv) {
+	struct selectop *sop = arg;
+	int i, res;
+
+	memcpy(sop->readset_dup, sop->readset, sizeof(fd_set));
+	memcpy(sop->writeset_dup, sop->writeset, sizeof(fd_set));
+	if ((res = select(sop->fds + 1, sop->readset_dup, sop->writeset_dup, NULL, tv) < 0)) {
+		if (errno != EINTR) {
+			event_warn(EVENT_LOG_HEAD "select: ", __FILE__, __func__, __LINE__);
+			return -1;
+		}
+
+		return 0;
+	}
+	event_log("select reports %d descripters available", res);
+
+	i = random() % (sop->fds + 1);
+	for (int j = 0; j <= sop->fds; j++) {
+		res = 0;
+		struct event *ev_r = NULL;
+		struct event *ev_w = NULL;
+
+		if (++i > sop->fds)
+			i = 0;
+		if (FD_ISSET(i, sop->readset_dup)) {
+			ev_r = sop->events_read[i];
+			res |= EV_READ;
+		}
+		if (FD_ISSET(i, sop->writeset_dup)) {
+			ev_w = sop->events_write[i];
+			res |= EV_WRITE;
+		}
+
+		if (ev_r && (res & ev_r->ev_type))
+			event_active(ev_r);
+		if (ev_w && (res & ev_w->ev_type))
+			event_active(ev_w);
 	}
 
 	return 0;
