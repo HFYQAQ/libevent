@@ -102,8 +102,8 @@ int select_process(struct event_base *base, void *arg, struct timeval *tv) {
 
 	memcpy(sop->readset_dup, sop->readset, sizeof(fd_set));
 	memcpy(sop->writeset_dup, sop->writeset, sizeof(fd_set));
-	res = select(sop->fds + 1, sop->readset_dup, sop->writeset_dup, NULL, tv);
-	if (res < 0)
+	//res = select(sop->fds + 1, sop->readset_dup, sop->writeset_dup, NULL, tv);
+	if ((res = select(sop->fds + 1, sop->readset_dup, sop->writeset_dup, NULL, tv)) < 0) {
 		if (errno != EINTR) {
 			event_warn(EVENT_LOG_HEAD "select: ", __FILE__, __func__, __LINE__);
 			return -1;

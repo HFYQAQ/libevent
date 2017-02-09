@@ -10,8 +10,7 @@ int main() {
 
 	event_base_set(base, &ev1);
 
-	struct timeval tv;
-	tv.tv_sec = 3;
+	struct timeval tv = {3, 0};
 	event_add(&ev1, &tv);
 
 	event_base_loop(base);
