@@ -92,12 +92,18 @@ int select_add(void *arg, struct event *ev) {
 }
 
 int select_process(struct event_base *base, void *arg, struct timeval *tv) {
+	if (tv)
+		event_log("SELECT_PROCESS: time(%ld:%d) is set", tv->tv_sec, tv->tv_usec);
+	else
+		event_log("SELECT_PROCESS: tv_sec(NULL) is set");
+
 	struct selectop *sop = arg;
 	int i, res;
 
 	memcpy(sop->readset_dup, sop->readset, sizeof(fd_set));
 	memcpy(sop->writeset_dup, sop->writeset, sizeof(fd_set));
-	if ((res = select(sop->fds + 1, sop->readset_dup, sop->writeset_dup, NULL, tv) < 0)) {
+	res = select(sop->fds + 1, sop->readset_dup, sop->writeset_dup, NULL, tv);
+	if (res < 0)
 		if (errno != EINTR) {
 			event_warn(EVENT_LOG_HEAD "select: ", __FILE__, __func__, __LINE__);
 			return -1;

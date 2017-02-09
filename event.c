@@ -29,6 +29,7 @@ NULL
 static void detect_monotonic();
 static int gettime(struct event_base *, struct timeval *);
 static void time_correct(struct event_base *, struct timeval *);
+static int time_next(struct event_base *, struct timeval **);
 static int event_haveevents(struct event_base *);
 static void event_queue_insert(struct event_base *, struct event *, short);
 static void event_queue_remove(struct event_base *, struct event *, short);
@@ -137,6 +138,11 @@ int event_base_loop(struct event_base *base) {
 	while(loop) {
 		time_correct(base, &tv);
 
+		if (!base->event_active_count)
+			time_next(base, &tv_p);
+		else
+			EVUTIL_TIMERCLEAR(tv_p);
+
 		if (!event_haveevents(base)) {
 			event_log("current base have no events");
 
@@ -149,6 +155,8 @@ int event_base_loop(struct event_base *base) {
 		base->evsel->process(base, base->evbase, tv_p);
 
 		gettime(base, &base->tv_cache);
+
+		printf("\n");
 	}
 
 	event_log("loop has been asked to terminnate.");
@@ -214,6 +222,32 @@ void time_correct(struct event_base *base, struct timeval *tv) {
 		EVUTIL_TIMERSUB(&p[n - 1]->ev_timeout, &off, &p[n - 1]->ev_timeout);
 	base->event_tv = *tv;
 	event_log("time is running backwards, but now corrected");
+}
+
+int time_next(struct event_base *base, struct timeval **tvp_p) {
+	struct event *ev;
+	struct timeval now;
+
+	if ((ev = min_heap_top(&base->timeheap)) == NULL) {
+		*tvp_p = NULL;
+		event_log("TIME_NEXT: NULL");
+
+		return 0;
+	}
+
+	if (gettime(base, &now) < 0)
+		return -1;
+	if (evutil_timercmp(&ev->ev_timeout, &now, <=)) {
+		EVUTIL_TIMERCLEAR(*tvp_p);
+		event_log("TIME_NEXT: 0");
+
+		return 0;
+	}
+
+	EVUTIL_TIMERSUB(&ev->ev_timeout, &now, *tvp_p);
+	event_log("TIME_NEXT: timeout occur in %ld seconds", (*tvp_p)->tv_sec);
+
+	return 0;
 }
 
 int event_haveevents(struct event_base *base) {
