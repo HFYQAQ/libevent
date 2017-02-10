@@ -51,7 +51,7 @@ int min_heap_greater(struct event *a, struct event *b) {
 }
 
 struct event* min_heap_top(min_heap_t *s) {
-	return *s->p;
+	return s->n ? *s->p : 0;
 }
 
 int min_heap_reserve(min_heap_t *s, unsigned cap) {

@@ -30,6 +30,7 @@ static void detect_monotonic();
 static int gettime(struct event_base *, struct timeval *);
 static void time_correct(struct event_base *, struct timeval *);
 static int time_next(struct event_base *, struct timeval **);
+static void timeout_process(struct event_base *);
 static int event_haveevents(struct event_base *);
 static void event_queue_insert(struct event_base *, struct event *, short);
 static void event_queue_remove(struct event_base *, struct event *, short);
@@ -136,6 +137,12 @@ int event_base_loop(struct event_base *base) {
 	struct timeval *tv_p = &tv;
 
 	while(loop) {
+		if (!event_haveevents(base)) {
+			event_log("current base have no events");
+
+			return 1;
+		}
+
 		time_correct(base, &tv);
 
 		if (!base->event_active_count)
@@ -143,24 +150,35 @@ int event_base_loop(struct event_base *base) {
 		else
 			EVUTIL_TIMERCLEAR(tv_p);
 
-		if (!event_haveevents(base)) {
-			event_log("current base have no events");
-
-			return 1;
-		}
-
 		gettime(base, &base->event_tv);
 		EVUTIL_TIMERCLEAR(&base->tv_cache);
 
-		base->evsel->process(base, base->evbase, tv_p);
+		if ((base->evsel->process(base, base->evbase, tv_p)) < 0)
+			return -1;
 
 		gettime(base, &base->tv_cache);
+
+		timeout_process(base);
 
 		printf("\n");
 	}
 
 	event_log("loop has been asked to terminnate.");
 	return 0;
+}
+
+void event_del(struct event *ev) {
+	if (!ev->ev_base)
+		event_warnx(EVENT_LOG_HEAD "ev(%d) del failed, is not registered", __FILE__, __func__, __LINE__, ev->ev_fd);
+
+	if (ev->ev_status & EVLIST_INSERTED) {
+		event_queue_remove(ev->ev_base, ev, EVLIST_INSERTED);
+		ev->ev_base->evsel->del(ev->ev_base->evbase, ev);
+	}
+	if (ev->ev_status & EVLIST_ACTIVE)
+		event_queue_remove(ev->ev_base, ev, EVLIST_ACTIVE);
+	if (ev->ev_status & EVLIST_TIMEOUT)
+		event_queue_remove(ev->ev_base, ev, EVLIST_TIMEOUT);
 }
 
 void event_active(struct event *ev) {
@@ -248,6 +266,26 @@ int time_next(struct event_base *base, struct timeval **tvp_p) {
 	event_log("TIME_NEXT: timeout occur in %ld seconds", (*tvp_p)->tv_sec);
 
 	return 0;
+}
+
+void timeout_process(struct event_base *base) {
+	struct event *ev;
+	struct timeval now;
+
+	if (min_heap_empty(&base->timeheap))
+		return;
+
+	gettime(base, &now);
+
+	while ((ev = min_heap_top(&base->timeheap))) {
+		if (evutil_timercmp(&ev->ev_timeout, &now, >))
+			break;
+
+		event_active(ev);
+		event_log("TIMEOUT_PROCESS: ev(%d) actived", ev->ev_fd);
+
+		event_del(ev);
+	}
 }
 
 int event_haveevents(struct event_base *base) {

@@ -12,6 +12,7 @@ struct eventop {
 	void *(*init)(void);
 	int (*add)(void *, struct event *);
 	int (*process)(struct event_base *, void *, struct timeval *);
+	void (*del)(void *, struct event *);
 };
 
 TAILQ_HEAD(event_list, event);

@@ -24,6 +24,7 @@ struct selectop {
 static void *select_init();
 static int select_add(void *, struct event *);
 static int select_process(struct event_base *, void *, struct timeval *);
+static void select_del(void *, struct event *);
 
 static int select_resize(struct selectop *, int);
 
@@ -31,7 +32,8 @@ struct eventop selectops = {
 	"select",
 	select_init,
 	select_add,
-	select_process
+	select_process,
+	select_del
 };
 
 void *select_init() {
@@ -87,6 +89,7 @@ int select_add(void *arg, struct event *ev) {
 		FD_SET(ev->ev_fd, sop->writeset);
 		sop->events_write[ev->ev_fd] = ev;
 	}
+	event_log("fd(%d) is set to select", ev->ev_fd);
 
 	return 0;
 }
@@ -102,7 +105,6 @@ int select_process(struct event_base *base, void *arg, struct timeval *tv) {
 
 	memcpy(sop->readset_dup, sop->readset, sizeof(fd_set));
 	memcpy(sop->writeset_dup, sop->writeset, sizeof(fd_set));
-	//res = select(sop->fds + 1, sop->readset_dup, sop->writeset_dup, NULL, tv);
 	if ((res = select(sop->fds + 1, sop->readset_dup, sop->writeset_dup, NULL, tv)) < 0) {
 		if (errno != EINTR) {
 			event_warn(EVENT_LOG_HEAD "select: ", __FILE__, __func__, __LINE__);
@@ -137,6 +139,23 @@ int select_process(struct event_base *base, void *arg, struct timeval *tv) {
 	}
 
 	return 0;
+}
+
+void select_del(void *arg, struct event *ev) {
+	struct selectop *sop = arg;
+
+	if (ev->ev_fd > sop->fds)
+		return;
+
+	if (ev->ev_type & EV_READ) {
+		FD_CLR(ev->ev_fd, sop->readset);
+		sop->events_read[ev->ev_fd] = NULL;
+	}
+	if (ev->ev_type & EV_WRITE) {
+		FD_CLR(ev->ev_fd, sop->writeset);
+		sop->events_write[ev->ev_fd] = NULL;
+	}
+	event_log("fd(%d) is removed from select", ev->ev_fd);
 }
 
 int select_resize(struct selectop *sop, int nevents) {
