@@ -1,8 +1,8 @@
-test: test.o event.o log.o evutil.o evsignal.o select.o
-	gcc -o test test.o event.o log.o evutil.o evsignal.o select.o
+server: server.o event.o log.o evutil.o evsignal.o select.o
+	gcc -o server server.o event.o log.o evutil.o evsignal.o select.o
 
-test.o: test.c
-	gcc -c test.c
+server.o: server.c
+	gcc -c server.c
 
 event.o: event-internal.h event.h event.c
 	gcc -c event.c
