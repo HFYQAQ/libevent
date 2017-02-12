@@ -2,9 +2,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
-#include "event-internal.h"
-#include "event.h"
-#include "log.h"
+#include "lib/event-internal.h"
+#include "lib/event.h"
+#include "lib/log.h"
 
 #define PORT 8888
 #define BACKLOG 5
