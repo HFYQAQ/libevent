@@ -311,10 +311,9 @@ void timeout_process(struct event_base *base) {
 		if (evutil_timercmp(&ev->ev_timeout, &now, >))
 			break;
 
+		event_del(ev);
 		event_active(ev, EV_TIMEOUT);
 		event_log("TIMEOUT_PROCESS: ev(%d) actived", ev->ev_fd);
-
-		event_del(ev);
 	}
 }
 

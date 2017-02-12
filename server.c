@@ -12,7 +12,7 @@
 struct event_base *base;
 
 int start();
-void handle_event(struct event *, int, short, void *, void (*)(int, short, void *));
+void handle_event(struct event *, int, short, void *, void (*)(int, short, void *), struct timeval *);
 void listen_cb(int, short, void *);
 
 int main() {
@@ -21,7 +21,7 @@ int main() {
 
 	listenfd = start();
 	struct event listenev;
-	handle_event(&listenev, listenfd, EV_READ | EV_PERSIST, NULL, listen_cb);
+	handle_event(&listenev, listenfd, EV_READ | EV_PERSIST, NULL, listen_cb, NULL);
 
 	event_base_loop(base);
 
@@ -55,10 +55,10 @@ int start() {
 	return listenfd;	
 }
 
-void handle_event(struct event *ev, int fd, short type, void *arg, void (*cb)(int, short, void *)) {
+void handle_event(struct event *ev, int fd, short type, void *arg, void (*cb)(int, short, void *), struct timeval *tv) {
 	event_set(ev, fd, type, arg, cb);
 	event_base_set(base, ev);
-	event_add(ev, NULL);
+	event_add(ev, tv);
 }
 
 void listen_cb(int fd, short type, void *arg) {
