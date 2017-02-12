@@ -194,7 +194,25 @@ void event_active(struct event *ev, short res) {
 }
 
 void event_active_process(struct event_base *base) {
-	event_log("event_active_process");
+	struct event_list *list;
+	struct event *ev;
+
+	for(int i = 0; i < base->nactivequeues; i++) {
+		if (TAILQ_FIRST(base->activequeues[i])) {
+			list = base->activequeues[i];
+			break;
+		}
+	}
+
+	while ((ev = TAILQ_FIRST(list))) {
+		if (ev->ev_type & EV_PERSIST)
+			event_queue_remove(base, ev, EVLIST_ACTIVE);
+		else
+			event_del(ev);
+
+		if (ev->ev_cb)
+			(*ev->ev_cb)(ev->ev_fd, ev->ev_type, ev->ev_arg);
+	}
 }
 
 void detect_monotonic() {

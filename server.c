@@ -13,6 +13,7 @@ struct event_base *base;
 
 int start();
 void handle_event(struct event *, int, short, void *, void (*)(int, short, void *));
+void listen_cb(int, short, void *);
 
 int main() {
 	int listenfd;
@@ -20,7 +21,7 @@ int main() {
 
 	listenfd = start();
 	struct event listenev;
-	handle_event(&listenev, listenfd, EV_READ, NULL, NULL);
+	handle_event(&listenev, listenfd, EV_READ | EV_PERSIST, NULL, listen_cb);
 
 	event_base_loop(base);
 
@@ -53,8 +54,13 @@ int start() {
 	event_log("server started! ip: %d:%d", servaddr.sin_addr.s_addr, ntohs(servaddr.sin_port));
 	return listenfd;	
 }
+
 void handle_event(struct event *ev, int fd, short type, void *arg, void (*cb)(int, short, void *)) {
 	event_set(ev, fd, type, arg, cb);
 	event_base_set(base, ev);
 	event_add(ev, NULL);
+}
+
+void listen_cb(int fd, short type, void *arg) {
+
 }

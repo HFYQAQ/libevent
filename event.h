@@ -9,6 +9,7 @@
 #define EV_WRITE 0x02
 #define EV_SIGNAL 0x04
 #define EV_TIMEOUT 0x08
+#define EV_PERSIST 0x10
 
 /* event status */
 #define EVLIST_INIT 0x01
