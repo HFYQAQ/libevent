@@ -34,6 +34,7 @@ static void timeout_process(struct event_base *);
 static int event_haveevents(struct event_base *);
 static void event_queue_insert(struct event_base *, struct event *, short);
 static void event_queue_remove(struct event_base *, struct event *, short);
+static void event_base_priority_init(struct event_base *, int);
 
 struct event_base *event_base_new() {
 	struct event_base *base;
@@ -49,6 +50,7 @@ struct event_base *event_base_new() {
 	// 初始化数据容器
 	TAILQ_INIT(&base->eventqueue);
 	min_heap_ctor(&base->timeheap);
+	event_base_priority_init(base, 1);
 
 	// about I/O multiplexing
 	for (int i = 0; eventops[i] && !base->evbase; i++) {
@@ -134,7 +136,7 @@ int event_add(struct event *ev, struct timeval *tv) {
 int event_base_loop(struct event_base *base) {
 	int loop = 1;
 	struct timeval tv;
-	struct timeval *tv_p = &tv;
+	struct timeval *tv_p;
 
 	while(loop) {
 		if (!event_haveevents(base)) {
@@ -145,10 +147,11 @@ int event_base_loop(struct event_base *base) {
 
 		time_correct(base, &tv);
 
+		tv_p = &tv;
 		if (!base->event_active_count)
 			time_next(base, &tv_p);
 		else
-			EVUTIL_TIMERCLEAR(tv_p);
+			EVUTIL_TIMERCLEAR(&tv);
 
 		gettime(base, &base->event_tv);
 		EVUTIL_TIMERCLEAR(&base->tv_cache);
@@ -159,6 +162,10 @@ int event_base_loop(struct event_base *base) {
 		gettime(base, &base->tv_cache);
 
 		timeout_process(base);
+
+		if (base->event_active_count) {
+			event_active_process(base);
+		}
 
 		printf("\n");
 	}
@@ -181,8 +188,13 @@ void event_del(struct event *ev) {
 		event_queue_remove(ev->ev_base, ev, EVLIST_TIMEOUT);
 }
 
-void event_active(struct event *ev) {
-	event_log("ev active success");
+void event_active(struct event *ev, short res) {
+	ev->ev_res = res;
+	event_queue_insert(ev->ev_base, ev, EVLIST_ACTIVE);
+}
+
+void event_active_process(struct event_base *base) {
+	event_log("event_active_process");
 }
 
 void detect_monotonic() {
@@ -281,7 +293,7 @@ void timeout_process(struct event_base *base) {
 		if (evutil_timercmp(&ev->ev_timeout, &now, >))
 			break;
 
-		event_active(ev);
+		event_active(ev, EV_TIMEOUT);
 		event_log("TIMEOUT_PROCESS: ev(%d) actived", ev->ev_fd);
 
 		event_del(ev);
@@ -344,4 +356,25 @@ void event_queue_remove(struct event_base *base, struct event *ev, short status)
 		break;
 	}
 	ev->ev_status &= ~status;
+}
+
+void event_base_priority_init(struct event_base *base, int npriority) {
+	if (base->event_active_count || base->nactivequeues) {
+		event_warnx(EVENT_LOG_HEAD "priority of the base specified has been inited", __FILE__, __func__, __LINE__);
+		return;
+	}
+
+	base->nactivequeues = npriority;
+	if (!(base->activequeues = (struct event_list **) calloc(base->nactivequeues, sizeof(struct event_list *))))
+		goto error;
+	for (int i = 0; i < base->nactivequeues; i++) {
+		if (!(base->activequeues[i] = (struct event_list *) calloc(1, sizeof(struct event_list))))
+			goto error;
+		TAILQ_INIT(base->activequeues[i]);
+	}
+
+	return;
+
+error:
+	event_err(1, EVENT_LOG_HEAD "calloc: ", __FILE__, __func__, __LINE__);
 }

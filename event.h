@@ -44,6 +44,7 @@ void event_set(struct event *, int, short, void *, void (*)(int, short, void *))
 int event_add(struct event *, struct timeval *);
 int event_base_loop(struct event_base *);
 void event_del(struct event *);
-void event_active(struct event *);
+void event_active(struct event *, short);
+void event_active_process(struct event_base *);
 
 #endif

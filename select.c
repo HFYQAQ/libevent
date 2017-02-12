@@ -133,9 +133,9 @@ int select_process(struct event_base *base, void *arg, struct timeval *tv) {
 		}
 
 		if (ev_r && (res & ev_r->ev_type))
-			event_active(ev_r);
+			event_active(ev_r, res & ev_r->ev_type);
 		if (ev_w && (res & ev_w->ev_type))
-			event_active(ev_w);
+			event_active(ev_w, res & ev_w->ev_type);
 	}
 
 	return 0;
