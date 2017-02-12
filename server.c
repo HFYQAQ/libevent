@@ -62,5 +62,18 @@ void handle_event(struct event *ev, int fd, short type, void *arg, void (*cb)(in
 }
 
 void listen_cb(int fd, short type, void *arg) {
+	char buff[1024];
+	ssize_t len;
+	int clifd;
+	struct sockaddr_in cliaddr;
+	socklen_t cliaddrlen;
 
+	cliaddrlen = sizeof(struct sockaddr_in);
+	if ((clifd = accept(fd, (struct sockaddr *) &cliaddr, &cliaddrlen)) < 0)
+		event_err(1, EVENT_LOG_HEAD "accept: ", __FILE__, __func__, __LINE__);
+
+	if ((len = recv(clifd, buff, sizeof(buff), 0)) < 0)
+		event_err(1, EVENT_LOG_HEAD "recv: ", __FILE__, __func__, __LINE__);
+
+	printf("%s\n", buff);
 }
