@@ -17,6 +17,7 @@
 #define EVLIST_ACTIVE 0x04
 #define EVLIST_SIGNAL 0x08
 #define EVLIST_TIMEOUT 0x10
+#define EVLIST_INTERNAL 0x20
 
 struct event_base;
 struct event {

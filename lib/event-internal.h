@@ -6,16 +6,15 @@
 #include "min_heap.h"
 #include "evsignal.h"
 #include "event.h"
+#include "event_list.h"
 
 struct eventop {
 	const char *name;
-	void *(*init)(void);
+	void *(*init)(struct event_base *);
 	int (*add)(void *, struct event *);
 	int (*process)(struct event_base *, void *, struct timeval *);
 	void (*del)(void *, struct event *);
 };
-
-TAILQ_HEAD(event_list, event);
 
 struct event_base {
 	// 时间量

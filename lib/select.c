@@ -4,6 +4,7 @@
 #include <errno.h>
 #include "event-internal.h"
 #include "event.h"
+#include "evsignal.h"
 #include "log.h"
 
 #define SELECT_INIT_NEVENTS 8 // event数组初始容量
@@ -21,7 +22,7 @@ struct selectop {
 	struct event **events_write;
 };
 
-static void *select_init();
+static void *select_init(struct event_base *);
 static int select_add(void *, struct event *);
 static int select_process(struct event_base *, void *, struct timeval *);
 static void select_del(void *, struct event *);
@@ -36,7 +37,7 @@ struct eventop selectops = {
 	select_del
 };
 
-void *select_init() {
+void *select_init(struct event_base *base) {
 	struct selectop *sop;
 
 	if (!(sop = (struct selectop *) calloc(1, sizeof(struct selectop))))
@@ -46,6 +47,8 @@ void *select_init() {
 	sop->nevents = 0;
 	sop->events_read = NULL;
 	sop->events_write = NULL;
+    
+	evsignal_init(base);
 
 	if (!(sop->readset = (fd_set *) calloc(1, sizeof(fd_set))))
 		goto error;
@@ -72,6 +75,12 @@ int select_add(void *arg, struct event *ev) {
 		event_warnx(EVENT_LOG_HEAD "the arg 2 cannot be NULL", __FILE__, __func__, __LINE__);
 		return -1;
 	}
+    
+    if (ev->ev_type & EV_SIGNAL) {
+        evsignal_add(ev);
+        return 0;
+    }
+
 	if (sop->fds < ev->ev_fd) {
 		// 扩容
 		if (sop->nevents < ev->ev_fd + 1) {

@@ -52,19 +52,19 @@ struct event_base *event_base_new() {
 	min_heap_ctor(&base->timeheap);
 	event_base_priority_init(base, 1);
 
+	// about Signal(depend on I/O)
+	base->sig.socketpair[0] = base->sig.socketpair[1] = -1;
+
 	// about I/O multiplexing
 	for (int i = 0; eventops[i] && !base->evbase; i++) {
 		base->evsel = eventops[i];
 
-		base->evbase = base->evsel->init();
+		base->evbase = base->evsel->init(base);
 	}
 	if (!base->evbase)
 		event_errx(1, EVENT_LOG_HEAD "no multiplexing available.", __FILE__, __func__, __LINE__);
 	else
 		event_log("current multiplexing: %s", base->evsel->name);
-
-	// about Signal(depend on I/O)
-	base->sig.socketpair[0] = base->sig.socketpair[1] = -1;
 
 	return base;
 }

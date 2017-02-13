@@ -23,6 +23,9 @@ int main() {
 	struct event listenev;
 	handle_event(&listenev, listenfd, EV_READ | EV_PERSIST, NULL, listen_cb, NULL);
 
+	struct event signalev;
+	handle_event(&signalev, SIGINT, EV_SIGNAL, NULL, NULL, NULL);
+
 	event_base_loop(base);
 
 	return 0;
