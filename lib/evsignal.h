@@ -8,13 +8,16 @@ struct event_base;
 struct event;
 
 struct evsignal_info {
-    struct event sig_event;
+	struct event sig_event;
 	int socketpair[2]; // [0]: write    [1]:read
-    struct event_list sig_evlist[NSIG];
-    sig_atomic_t sig_caught[NSIG];
+	struct event_list sig_evlist[NSIG];
+	sig_atomic_t sig_caught[NSIG];
 	sig_atomic_t caught;
-    
-    int sig_event_added;
+
+	int sa_old_max;
+	struct sigaction **sa_old;
+
+	int sig_event_added;
 };
 
 void evsignal_init(struct event_base *);

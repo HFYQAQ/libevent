@@ -11,7 +11,8 @@ static struct event_base *signal_base = NULL;
 
 static void evsignal_cb(int, short, void *);
 static void evsignal_handler(int);
-static void _signo_handler(int, void (*)(int));
+static void _signo_set_handler(struct event_base *, int, void (*)(int));
+static void _signo_restore_handler(struct event_base *, int);
 
 void evsignal_init(struct event_base *base) {
     int i;
@@ -29,6 +30,9 @@ void evsignal_init(struct event_base *base) {
         TAILQ_INIT(&base->sig.sig_evlist[i]);
     memset(base->sig.sig_caught, 0, NSIG * sizeof(sig_atomic_t));
 	base->sig.caught = 0;
+
+	base->sig.sa_old_max = 0;
+	base->sig.sa_old = NULL;
     
     base->sig.sig_event_added = 0;
     event_set(&base->sig.sig_event, base->sig.socketpair[1], EV_READ | EV_PERSIST, NULL, evsignal_cb);
@@ -46,7 +50,7 @@ void evsignal_add(struct event *ev) {
     struct event_base *base = ev->ev_base;
     struct evsignal_info *sig = &base->sig;
 
-    _signo_handler(signo, evsignal_handler);
+    _signo_set_handler(base, signo, evsignal_handler);
     TAILQ_INSERT_TAIL(&sig->sig_evlist[signo], ev, ev_signal_next);
 
     if (!sig->sig_event_added) {
@@ -55,15 +59,27 @@ void evsignal_add(struct event *ev) {
     }
 }
 
-void _signo_handler(int signo, void (*handler)(int)) {
+void _signo_set_handler(struct event_base *base, int signo, void (*handler)(int)) {
     struct sigaction sa;
-    
+   
+	if (signo >= base->sig.sa_old_max) {
+		int n = signo + 1;
+		struct sigaction *sa;
+
+		if (!(base->sig.sa_old = realloc(base->sig.sa_old, n * sizeof(struct sigaction *))))
+			event_err(1, EVENT_LOG_HEAD "realloc: ", __FILE__, __func__, __LINE__);
+		memset(base->sig.sa_old + base->sig.sa_old_max * sizeof(struct sigaction *), 0, (n - base->sig.sa_old_max) * sizeof(struct sigaction *));
+		base->sig.sa_old_max = n;
+	}
+ 
     sa.sa_handler = handler;
     sa.sa_flags = SA_RESTART;
     sigfillset(&sa.sa_mask);
     
-    if (sigaction(signo, &sa, NULL) < 0)
-        event_err(1, EVENT_LOG_HEAD "sigaction: ", __FILE__, __func__, __LINE__);
+	if (sigaction(signo, &sa, base->sig.sa_old[signo]) < 0) {
+		free(base->sig.sa_old[signo]);
+        	event_err(1, EVENT_LOG_HEAD "sigaction: ", __FILE__, __func__, __LINE__);
+	}
 }
 
 void evsignal_process(struct event_base *base) {
@@ -88,6 +104,17 @@ void evsignal_process(struct event_base *base) {
 
 void evsignal_del(struct event *ev) {
 	TAILQ_REMOVE(&ev->ev_base->sig.sig_evlist[ev->ev_fd], ev, ev_signal_next);
+	_signo_restore_handler(ev->ev_base, ev->ev_fd);
+}
+
+void _signo_restore_handler(struct event_base *base, int signo) {
+	struct sigaction *sa = base->sig.sa_old[signo];
+	base->sig.sa_old[signo] = NULL;
+
+	if (sigaction(signo, sa, NULL) < 0) {
+		free(sa);
+		event_err(1, EVENT_LOG_HEAD "sigaction: ", __FILE__, __func__, __LINE__);
+	}
 }
 
 void evsignal_destroy(struct event_base *base) {
