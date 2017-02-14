@@ -28,6 +28,7 @@ void evsignal_init(struct event_base *base) {
     for (i = 0; i < NSIG; i++)
         TAILQ_INIT(&base->sig.sig_evlist[i]);
     memset(base->sig.sig_caught, 0, NSIG * sizeof(sig_atomic_t));
+	base->sig.caught = 0;
     
     base->sig.sig_event_added = 0;
     event_set(&base->sig.sig_event, base->sig.socketpair[1], EV_READ | EV_PERSIST, NULL, evsignal_cb);
@@ -46,7 +47,7 @@ void evsignal_add(struct event *ev) {
     struct evsignal_info *sig = &base->sig;
 
     _signo_handler(signo, evsignal_handler);
-    TAILQ_INSERT_TAIL(&sig->sig_evlist[signo], ev, ev_next);
+    TAILQ_INSERT_TAIL(&sig->sig_evlist[signo], ev, ev_signal_next);
 
     if (!sig->sig_event_added) {
         event_add(&sig->sig_event, NULL);
@@ -66,11 +67,27 @@ void _signo_handler(int signo, void (*handler)(int)) {
 }
 
 void evsignal_process(struct event_base *base) {
-    
+	sig_atomic_t n;
+	struct evsignal_info *sig = &base->sig;
+	struct event *ev;
+
+	sig->caught = 0;
+	for (int i = 0; i < NSIG; i++) {
+		if (!sig->sig_caught[i])
+			continue;
+
+		n = sig->sig_caught[i];
+		sig->sig_caught[i] -= n;
+		for (ev = TAILQ_FIRST(&sig->sig_evlist[i]); ev != NULL; ev = TAILQ_NEXT(ev, ev_signal_next)) {
+			if (!(ev->ev_type & EV_PERSIST))
+				event_del(ev);
+			event_active(ev, EV_SIGNAL);
+		}
+	}
 }
 
 void evsignal_del(struct event *ev) {
-    
+	TAILQ_REMOVE(&ev->ev_base->sig.sig_evlist[ev->ev_fd], ev, ev_signal_next);
 }
 
 void evsignal_destroy(struct event_base *base) {
@@ -87,9 +104,9 @@ void evsignal_cb(int fd, short type, void *arg) {
 }
 
 void evsignal_handler(int signo) {
+	signal_base->sig.caught = 1;
     signal_base->sig.sig_caught[signo]++;
    
-printf("%d\n", signal_base->sig.socketpair[0]); 
     if (send(signal_base->sig.socketpair[0], "a", 1, 0) < 0)
         event_err(1, EVENT_LOG_HEAD "send: ", __FILE__, __func__, __LINE__);
     event_log("evsignal_handler: signo(%d) caught", signo);

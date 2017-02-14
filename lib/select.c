@@ -119,8 +119,11 @@ int select_process(struct event_base *base, void *arg, struct timeval *tv) {
 			event_warn(EVENT_LOG_HEAD "select: ", __FILE__, __func__, __LINE__);
 			return -1;
 		}
+		evsignal_process(base);
 
 		return 0;
+	} else if (base->sig.caught) {
+		evsignal_process(base);
 	}
 	event_log("select reports %d descripters available", res);
 
@@ -156,6 +159,10 @@ void select_del(void *arg, struct event *ev) {
 	if (ev->ev_fd > sop->fds)
 		return;
 
+	if (ev->ev_type & EV_SIGNAL) {
+		evsignal_del(ev);
+		return;
+	}
 	if (ev->ev_type & EV_READ) {
 		FD_CLR(ev->ev_fd, sop->readset);
 		sop->events_read[ev->ev_fd] = NULL;

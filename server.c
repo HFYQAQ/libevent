@@ -14,6 +14,7 @@ struct event_base *base;
 int start();
 void handle_event(struct event *, int, short, void *, void (*)(int, short, void *), struct timeval *);
 void listen_cb(int, short, void *);
+void signal_cb(int, short, void *);
 
 int main() {
 	int listenfd;
@@ -24,7 +25,7 @@ int main() {
 	handle_event(&listenev, listenfd, EV_READ | EV_PERSIST, NULL, listen_cb, NULL);
 
 	struct event signalev;
-	handle_event(&signalev, SIGINT, EV_SIGNAL, NULL, NULL, NULL);
+	handle_event(&signalev, SIGINT, EV_SIGNAL, NULL, signal_cb, NULL);
 
 	event_base_loop(base);
 
@@ -79,4 +80,8 @@ void listen_cb(int fd, short type, void *arg) {
 		event_err(1, EVENT_LOG_HEAD "recv: ", __FILE__, __func__, __LINE__);
 
 	printf("%s\n", buff);
+}
+
+void signal_cb(int fd, short type, void *arg) {
+	printf("signal_cb: %d\ntype: %d\n", fd, type);
 }

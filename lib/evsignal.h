@@ -12,6 +12,7 @@ struct evsignal_info {
 	int socketpair[2]; // [0]: write    [1]:read
     struct event_list sig_evlist[NSIG];
     sig_atomic_t sig_caught[NSIG];
+	sig_atomic_t caught;
     
     int sig_event_added;
 };
