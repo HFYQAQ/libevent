@@ -75,7 +75,10 @@ void _signo_set_handler(struct event_base *base, int signo, void (*handler)(int)
     sa.sa_handler = handler;
     sa.sa_flags = SA_RESTART;
     sigfillset(&sa.sa_mask);
-    
+
+	if (!(base->sig.sa_old[signo] = calloc(1, sizeof(struct sigaction))))
+		event_err(1, EVENT_LOG_HEAD "calloc: ", __FILE__, __func__, __LINE__);
+
 	if (sigaction(signo, &sa, base->sig.sa_old[signo]) < 0) {
 		free(base->sig.sa_old[signo]);
         	event_err(1, EVENT_LOG_HEAD "sigaction: ", __FILE__, __func__, __LINE__);
